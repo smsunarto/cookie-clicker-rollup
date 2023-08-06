@@ -9,7 +9,7 @@ import (
 
 type Block struct {
 	Timestamp  int64
-	Number     int
+	Number     uint64
 	StateHash  string
 	Txs        []types.Transaction
 	TxReceipts []types.TransactionReceipt
@@ -26,7 +26,7 @@ func NewStateProcessor(verifySignature bool) *StateProcessor {
 }
 
 // ProcessState processes the state and returns the new state and latest block
-func (sp *StateProcessor) ProcessState(sdb StateDB, mp mempool.Mempool) (Block, error) {
+func (sp *StateProcessor) ProcessState(sdb StateDB, mp *mempool.Mempool) (Block, error) {
 	var (
 		txs        []types.Transaction
 		txReceipts []types.TransactionReceipt
@@ -47,14 +47,14 @@ func (sp *StateProcessor) ProcessState(sdb StateDB, mp mempool.Mempool) (Block, 
 		txReceipts = append(txReceipts, txReceipt)
 	}
 
+	sdb.SetBlockHeight(sdb.GetBlockHeight() + 1)
 	block := Block{
 		Timestamp:  time.Now().Unix(),
-		Number:     sdb.GetBlockHeight() + 1,
+		Number:     sdb.GetBlockHeight(),
 		StateHash:  sdb.CalculateStateHash(),
 		Txs:        txs,
 		TxReceipts: txReceipts,
 	}
-	sdb.SetBlockHeight(block.Number)
 
 	return block, nil
 }
@@ -64,7 +64,7 @@ func (sp *StateProcessor) applyTx(sdb StateDB, tx types.Transaction) types.Trans
 	acct := sdb.GetAccount(tx.From)
 
 	// If tx.Nonce is smaller or equal to the account latest nonce, ignore
-	if tx.Nonce <= acct.Nonce {
+	if sp.VerifySignature && tx.Nonce <= acct.Nonce {
 		return tx.NewTxReceipt("invalid nonce")
 	}
 

@@ -9,7 +9,7 @@ import (
 type TransactionHash string
 
 type RawTransaction struct {
-	Nonce   int
+	Nonce   uint64
 	ChainID string
 	From    string
 }
@@ -27,7 +27,7 @@ func (rawTx *RawTransaction) HashHex() TransactionHash {
 }
 
 type Transaction struct {
-	Nonce     int
+	Nonce     uint64
 	ChainID   string
 	From      string
 	Signature string

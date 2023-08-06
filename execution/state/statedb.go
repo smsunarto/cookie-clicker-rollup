@@ -4,59 +4,64 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/rs/zerolog/log"
 	"github.com/smsunarto/cookie-clicker-rollup/execution/types"
 )
 
 type StateDB interface {
-	GetBlock(blockNumber int) Block
-	SetBlock(blockNumber int, block Block)
+	GetBlock(blockNumber uint64) Block
+	SetBlock(blockNumber uint64, block Block)
 
 	// State hashed part of things
 	CalculateStateHash() string
 
-	GetBlockHeight() int
-	SetBlockHeight(blockHeight int)
+	GetBlockHeight() uint64
+	SetBlockHeight(blockHeight uint64)
 
-	GetCookieClickerCount() int
-	SetCookieClickerCount(count int)
+	GetCookieClickerCount() uint64
+	SetCookieClickerCount(count uint64)
 
 	GetAccount(address string) types.Account
-	GetAggregateAccountHash() string
-	SetAccount(address string, nonce int, clickCount int)
+	GetAggregateAccountHash() []byte
+	SetAccount(address string, nonce uint64, clickCount uint64)
 }
 
 type MockStateDB struct {
-	CookieClickerCount int
-	BlockHeight        int
-	Blocks             map[int]Block
+	CookieClickerCount uint64
+	BlockHeight        uint64
+	Blocks             map[uint64]Block
 	Accounts           map[string]types.Account
 }
 
-func NewMockStateDB() *MockStateDB {
-	return &MockStateDB{
+func NewMockStateDB() *StateDB {
+	var sdb StateDB
+	sdb = &MockStateDB{
 		CookieClickerCount: 0,
-		Blocks:             map[int]Block{},
+		BlockHeight:        0,
+		Blocks:             map[uint64]Block{},
 		Accounts:           map[string]types.Account{},
 	}
+
+	return &sdb
 }
 
-func (msd *MockStateDB) GetBlock(blockNumber int) Block {
+func (msd *MockStateDB) GetBlock(blockNumber uint64) Block {
 	return msd.Blocks[blockNumber]
 }
 
-func (msd *MockStateDB) SetBlock(blockNumber int, block Block) {
+func (msd *MockStateDB) SetBlock(blockNumber uint64, block Block) {
 	msd.Blocks[blockNumber] = block
 }
 
 func (msd *MockStateDB) CalculateStateHash() string {
 	state := struct {
-		cookieClickerCount int
-		blockHeight        int
-		accountHash        []byte
+		CookieClickerCount uint64
+		BlockHeight        uint64
+		AccountHash        []byte
 	}{
-		cookieClickerCount: msd.CookieClickerCount,
-		blockHeight:        msd.BlockHeight,
-		accountHash:        msd.GetAggregateAccountHash(),
+		CookieClickerCount: msd.CookieClickerCount,
+		BlockHeight:        msd.BlockHeight,
+		AccountHash:        msd.GetAggregateAccountHash(),
 	}
 
 	encState, err := rlp.EncodeToBytes(state)
@@ -67,19 +72,19 @@ func (msd *MockStateDB) CalculateStateHash() string {
 	return common.Bytes2Hex(crypto.Keccak256(encState))
 }
 
-func (msd *MockStateDB) GetBlockHeight() int {
+func (msd *MockStateDB) GetBlockHeight() uint64 {
 	return msd.BlockHeight
 }
 
-func (msd *MockStateDB) SetBlockHeight(blockHeight int) {
+func (msd *MockStateDB) SetBlockHeight(blockHeight uint64) {
 	msd.BlockHeight = blockHeight
 }
 
-func (msd *MockStateDB) GetCookieClickerCount() int {
+func (msd *MockStateDB) GetCookieClickerCount() uint64 {
 	return msd.CookieClickerCount
 }
 
-func (msd *MockStateDB) SetCookieClickerCount(count int) {
+func (msd *MockStateDB) SetCookieClickerCount(count uint64) {
 	msd.CookieClickerCount = count
 }
 
@@ -100,13 +105,15 @@ func (msd *MockStateDB) GetAggregateAccountHash() []byte {
 	return hash.Sum(nil)
 }
 
-func (msd *MockStateDB) SetAccount(address string, nonce int, clickCount int) {
+func (msd *MockStateDB) SetAccount(address string, nonce uint64, clickCount uint64) {
 	acctData := struct {
-		nonce      int
-		clickCount int
+		Address    string
+		Nonce      uint64
+		ClickCount uint64
 	}{
-		nonce:      nonce,
-		clickCount: clickCount,
+		Address:    address,
+		Nonce:      nonce,
+		ClickCount: clickCount,
 	}
 
 	encAcctData, err := rlp.EncodeToBytes(acctData)
@@ -114,8 +121,10 @@ func (msd *MockStateDB) SetAccount(address string, nonce int, clickCount int) {
 		panic(err)
 	}
 
+	log.Info().Msg("Setting account hash")
 	msd.Accounts[address] = types.Account{
 		AccountHash: common.Bytes2Hex(crypto.Keccak256(encAcctData)),
+		Address:     address,
 		Nonce:       nonce,
 		ClickCount:  clickCount,
 	}
