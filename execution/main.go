@@ -16,7 +16,7 @@ func main() {
 	go rpcServer.Start()
 
 	// State processor
-	sp := state.NewStateProcessor(false)
+	sp := state.NewStateProcessor(true)
 	sdb := *state.NewMockStateDB()
 
 	for {

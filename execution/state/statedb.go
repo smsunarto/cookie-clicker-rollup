@@ -21,16 +21,16 @@ type StateDB interface {
 	GetCookieClickerCount() uint64
 	SetCookieClickerCount(count uint64)
 
-	GetAccount(address string) types.Account
+	GetAccount(address common.Address) types.Account
 	GetAggregateAccountHash() []byte
-	SetAccount(address string, nonce uint64, clickCount uint64)
+	SetAccount(address common.Address, nonce uint64, clickCount uint64)
 }
 
 type MockStateDB struct {
 	CookieClickerCount uint64
 	BlockHeight        uint64
 	Blocks             map[uint64]Block
-	Accounts           map[string]types.Account
+	Accounts           map[common.Address]types.Account
 }
 
 func NewMockStateDB() *StateDB {
@@ -39,7 +39,7 @@ func NewMockStateDB() *StateDB {
 		CookieClickerCount: 0,
 		BlockHeight:        0,
 		Blocks:             map[uint64]Block{},
-		Accounts:           map[string]types.Account{},
+		Accounts:           map[common.Address]types.Account{},
 	}
 
 	return &sdb
@@ -88,7 +88,7 @@ func (msd *MockStateDB) SetCookieClickerCount(count uint64) {
 	msd.CookieClickerCount = count
 }
 
-func (msd *MockStateDB) GetAccount(address string) types.Account {
+func (msd *MockStateDB) GetAccount(address common.Address) types.Account {
 	return msd.Accounts[address]
 }
 
@@ -105,9 +105,9 @@ func (msd *MockStateDB) GetAggregateAccountHash() []byte {
 	return hash.Sum(nil)
 }
 
-func (msd *MockStateDB) SetAccount(address string, nonce uint64, clickCount uint64) {
+func (msd *MockStateDB) SetAccount(address common.Address, nonce uint64, clickCount uint64) {
 	acctData := struct {
-		Address    string
+		Address    common.Address
 		Nonce      uint64
 		ClickCount uint64
 	}{

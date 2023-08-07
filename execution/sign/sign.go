@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/smsunarto/cookie-clicker-rollup/execution/types"
 )
@@ -22,7 +23,6 @@ func SignRawTransaction(pk *ecdsa.PrivateKey, rawTx *types.RawTransaction) (*typ
 
 	tx := &types.Transaction{
 		Nonce:     rawTx.Nonce,
-		ChainID:   rawTx.ChainID,
 		From:      rawTx.From,
 		Signature: common.Bytes2Hex(buf),
 	}
@@ -34,17 +34,25 @@ func SignRawTransaction(pk *ecdsa.PrivateKey, rawTx *types.RawTransaction) (*typ
 func VerifyTransactionSignature(tx *types.Transaction) bool {
 	// Decode the raw transaction from the transaction
 	rawTx := &types.RawTransaction{
-		Nonce:   tx.Nonce,
-		ChainID: tx.ChainID,
-		From:    tx.From,
+		From:  tx.From,
+		Nonce: tx.Nonce,
 	}
 
-	// Decode the signature from the transaction
-	signerPubKey, err := crypto.SigToPub(rawTx.Hash(), common.Hex2Bytes(tx.Signature))
+	sig, err := hexutil.Decode(tx.Signature)
 	if err != nil {
 		return false
 	}
-	signerAddr := crypto.PubkeyToAddress(*signerPubKey).Hex()
+
+	if sig[crypto.RecoveryIDOffset] == 27 || sig[crypto.RecoveryIDOffset] == 28 {
+		sig[crypto.RecoveryIDOffset] -= 27 // Transform yellow paper V from 27/28 to 0/1
+	}
+
+	// Decode the signature from the transaction
+	signerPubKey, err := crypto.SigToPub(rawTx.Hash(), sig)
+	if err != nil {
+		return false
+	}
+	signerAddr := crypto.PubkeyToAddress(*signerPubKey)
 
 	// Verify the signature using the public key
 	if signerAddr == tx.From {

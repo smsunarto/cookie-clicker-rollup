@@ -9,9 +9,8 @@ import (
 type TransactionHash string
 
 type RawTransaction struct {
-	Nonce   uint64
-	ChainID string
-	From    string
+	From  common.Address
+	Nonce uint64
 }
 
 func (rawTx *RawTransaction) Hash() []byte {
@@ -27,9 +26,8 @@ func (rawTx *RawTransaction) HashHex() TransactionHash {
 }
 
 type Transaction struct {
+	From      common.Address
 	Nonce     uint64
-	ChainID   string
-	From      string
 	Signature string
 }
 
