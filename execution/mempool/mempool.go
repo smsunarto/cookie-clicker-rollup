@@ -1,6 +1,9 @@
 package mempool
 
-import "github.com/smsunarto/cookie-clicker-rollup/execution/types"
+import (
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/smsunarto/cookie-clicker-rollup/execution/types"
+)
 
 type Mempool struct {
 	transactions []types.Transaction
@@ -12,11 +15,9 @@ func NewMempool() *Mempool {
 	}
 }
 
-func (mp *Mempool) SubmitTX(transaction types.Transaction) types.TransactionHash {
-	mp.transactions = append(mp.transactions, transaction)
-
-	// TODO: properly hash the transaction
-	return "123"
+func (mp *Mempool) SubmitTX(tx types.Transaction) types.TransactionHash {
+	mp.transactions = append(mp.transactions, tx)
+	return types.TransactionHash(common.Bytes2Hex(tx.Hash()))
 }
 
 func (mp *Mempool) PopTX() types.Transaction {
