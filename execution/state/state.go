@@ -56,6 +56,9 @@ func (sp *StateProcessor) ProcessState(sdb StateDB, mp *mempool.Mempool) (Block,
 		TxReceipts: txReceipts,
 	}
 
+	// Store block in state db
+	sdb.SetBlock(block.Number, block)
+
 	return block, nil
 }
 
