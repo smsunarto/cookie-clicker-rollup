@@ -20,21 +20,25 @@ func main() {
 	sdb := *state.NewMockStateDB()
 
 	for {
-		block, err := sp.ProcessState(sdb, mp)
-		if err != nil {
-			log.Error().Err(err).Msg("Error processing state")
-		} else {
-			//log.Info().Msgf("Processed block %d", block.Number)
-			log.Debug().Msgf("Block: %+v", block)
+		// Skip block if mempool is empty
+		if mp.IsEmpty() {
+			time.Sleep(1 * time.Second)
+			continue
 		}
 
+		NewBlock(sp, sdb, mp)
 		time.Sleep(1 * time.Second)
 	}
 }
 
-func NewBlock() {
-	// TODO: implement
-	// Get transactions from mempool and handle them
+func NewBlock(sp *state.StateProcessor, sdb state.StateDB, mp *mempool.Mempool) {
+	block, err := sp.ProcessState(sdb, mp)
+	if err != nil {
+		log.Error().Err(err).Msg("Error processing state")
+	} else {
+		//log.Info().Msgf("Processed block %d", block.Number)
+		log.Debug().Msgf("Block: %+v", block)
+	}
 }
 
 func SubmitBlock() {
